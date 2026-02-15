@@ -1,0 +1,10 @@
+streamlit
+pandas
+json
+pypdf
+crewai
+os
+requests
+pypdf
+uuid
+re
