@@ -40,8 +40,8 @@ class ApiTestingCrew():
     # Options: "groq/llama-3.3-70b-versatile" or "groq/mixtral-8x7b-32768"
     groq_llm = LLM(
         model="groq/llama-3.3-70b-versatile", 
-        api_key=os.getenv("GROQ_API_KEY")
-       #api_key="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"
+        #api_key=os.getenv("GROQ_API_KEY")
+       api_key="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"
     )
 
     @agent
@@ -99,4 +99,5 @@ class ApiTestingCrew():
             process=Process.sequential,
             max_rpm=10, # Keep it slow for Gemini Free Tier
             verbose=True
+
         )
