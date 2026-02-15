@@ -45,6 +45,8 @@ def api_caller_tool(url: str, method: str, headers: dict = {}, json_body: dict =
 class ApiTestingCrew():
     # UPDATED: Using Groq LLM instead of Gemini 
     # Options: "groq/llama-3.3-70b-versatile" or "groq/mixtral-8x7b-32768"
+    agents_config = 'agents.yaml'  # Removed 'config/' prefix
+    tasks_config = 'tasks.yaml'    # Removed 'config/' prefix
     groq_llm = LLM(
         model="groq/llama-3.3-70b-versatile", 
         #api_key=os.getenv("GROQ_API_KEY")
@@ -108,6 +110,7 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
 
