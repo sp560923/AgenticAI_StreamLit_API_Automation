@@ -1,0 +1,26 @@
+input_collection_task:
+  description: >
+    Review the following user input: {user_query}. 
+    Identify the URL, HTTP Method, Authorization headers, and the JSON body.
+  expected_output: >
+    A structured dictionary containing 'url', 'method', 'headers', and 'payload'.
+
+api_execution_task:
+  description: >
+    Using the structured data from the collector, execute the API call using Python. 
+    You must provide the Status Code, Response Headers, and the Response Body.
+  expected_output: >
+    The full raw response from the server including any error messages if the call failed.
+
+reporting_task:
+  description: >
+    Analyze the execution results and generate a final report.
+    You MUST include these exact sections in the markdown report:
+    1. "## API Call Details" followed by URL, Method, Content-type, and Payload.
+    2. "## Execution Results" followed by Status Code, Status, Response Time, and Schema Validation.
+    3. "## Summary" followed by a short summary of the test.
+    4. "## Raw JSON Output" followed by the full response body inside triple backticks and the 'json' tag.
+    Be short and crisp but ensure all metrics are present.
+  expected_output: >
+    A formatted markdown report with sections for URL, Method, Payload, Status Code, 
+    Response Time, Schema Validation, and the Raw JSON Output in a code block.
