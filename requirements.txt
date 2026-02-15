@@ -1,8 +1,10 @@
 streamlit
 pandas
 pypdf
-crewai
+crewai[tools]
+litellm
 requests
+
 
 
 
