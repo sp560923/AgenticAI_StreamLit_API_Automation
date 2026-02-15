@@ -5,6 +5,8 @@ crewai[tools]
 litellm
 requests
 fastapi
+pydantic
+
 
 
 
