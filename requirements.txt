@@ -4,6 +4,8 @@ pypdf
 crewai[tools]
 litellm
 requests
+fastapi
+
 
 
 
