@@ -1,4 +1,6 @@
 import os
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 import pandas as pd
 from pypdf import PdfReader
 #from AgenticAI_StreamLit_API_Automation.crew import ApiTestingCrew
@@ -51,4 +53,5 @@ if __name__ == "__main__":
         run_bulk_from_file(file_to_process)
     else:
         print("Excel not found. Running single test...")
+
         run_single_request("URL: https://jsonplaceholder.typicode.com/posts, Method: POST")
