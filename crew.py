@@ -4,6 +4,7 @@ import requests
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 from crewai.tools import tool
+from pydantic import BaseModel, Field, ConfigDict
 
 # Disable telemetry to prevent the "signal" error in Streamlit
 os.environ["OTEL_SDK_DISABLED"] = "true"
@@ -11,12 +12,21 @@ os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 # Use the secret from Streamlit Dashboard instead of hardcoding
 groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
-# --- UPDATED CUSTOM TOOL ---
-@tool("api_caller_tool")
-def api_caller_tool(url: str, method: str, headers: dict = {}, json_body: dict = {}):
+
+
+# 1. Define the input schema strictly for Groq
+class ApiCallerSchema(BaseModel):
+    model_config = ConfigDict(extra='forbid') # This satisfies the Groq "additionalProperties:false" requirement
+    url: str = Field(..., description="The full URL of the API endpoint")
+    method: str = Field(..., description="The HTTP method (GET, POST, PUT, DELETE)")
+    headers: dict = Field(default_factory=dict, description="A dictionary of HTTP headers")
+    json_body: dict = Field(default_factory=dict, description="A dictionary for the JSON request body")
+
+# 2. Update the tool to use this schema
+@tool("api_caller_tool", args_schema=ApiCallerSchema)
+def api_caller_tool(url: str, method: str, headers: dict = None, json_body: dict = None):
     """Executes a real REST API call (GET, POST, PUT, DELETE)."""
     try:
-        # If the LLM passes None, default back to empty dict
         actual_headers = headers if headers is not None else {}
         actual_body = json_body if json_body is not None else {}
         
@@ -110,6 +120,7 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
 
