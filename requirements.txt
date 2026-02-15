@@ -2,9 +2,6 @@ streamlit
 pandas
 pypdf
 crewai
-os
 requests
-pypdf
-uuid
-
 re
+
