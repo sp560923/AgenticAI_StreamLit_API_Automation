@@ -3,6 +3,8 @@ import requests
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 from crewai.tools import tool
+# Use the secret from Streamlit Dashboard instead of hardcoding
+groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
 # --- UPDATED CUSTOM TOOL ---
 @tool("api_caller_tool")
@@ -41,6 +43,7 @@ class ApiTestingCrew():
     groq_llm = LLM(
         model="groq/llama-3.3-70b-versatile", 
         #api_key=os.getenv("GROQ_API_KEY")
+        api_key=groq_api_key
        api_key="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"
     )
 
@@ -101,3 +104,4 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
