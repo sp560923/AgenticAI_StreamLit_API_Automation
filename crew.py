@@ -3,6 +3,10 @@ import requests
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 from crewai.tools import tool
+
+# Disable telemetry to prevent the "signal" error in Streamlit
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 # Use the secret from Streamlit Dashboard instead of hardcoding
 groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
@@ -103,5 +107,6 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
