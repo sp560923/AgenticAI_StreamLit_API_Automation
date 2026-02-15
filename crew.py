@@ -1,4 +1,5 @@
 import os
+import streamlit as st  # Fixes the NameError
 import requests
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
@@ -107,6 +108,7 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
 
