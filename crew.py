@@ -44,14 +44,14 @@ class ApiCallerInput(BaseModel):
 class ApiCallerTool(BaseTool):
     name: str = "api_caller_tool"
     description: str = "Executes real REST API calls using provided URL, method, headers, and JSON body."
-    args_schema = ApiCallerInput
+    args_schema: type[BaseModel] = ApiCallerInput
 
     def _run(
         self,
         url: str,
         method: str,
-        headers: Optional[List[dict]] = None,
-        json_body: Optional[List[dict]] = None
+        headers: Optional[list] = None,
+        json_body: Optional[list] = None
     ) -> str:
         try:
             headers_dict = {h["key"]: h["value"] for h in (headers or [])}
@@ -70,9 +70,9 @@ class ApiCallerTool(BaseTool):
                 f"Response Headers: {dict(response.headers)}\n"
                 f"Response Body:\n{response.text[:2000]}"
             )
-
         except Exception as e:
             return f"API Execution Error: {str(e)}"
+
 
 # Instantiate tool
 api_caller_tool = ApiCallerTool()
@@ -154,3 +154,4 @@ class ApiTestingCrew():
             process=Process.sequential,
             verbose=True
         )
+
