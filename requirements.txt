@@ -6,3 +6,4 @@ pydantic[email]
 email-validator
 fastapi
 apscheduler
+fastapi-sso
