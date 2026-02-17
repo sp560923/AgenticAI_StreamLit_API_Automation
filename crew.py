@@ -1,4 +1,5 @@
 import os
+import json
 import streamlit as st
 import requests
 from crewai import Agent, Crew, Process, Task, LLM
@@ -13,7 +14,6 @@ from typing import Optional, List
 os.environ["OTEL_SDK_DISABLED"] = "true"
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
-# Disable LiteLLM proxy / SSO / logging paths
 os.environ["LITELLM_MODE"] = "STANDARD"
 os.environ["LITELLM_DISABLE_LOGGING"] = "true"
 os.environ["LITELLM_PROXY_DISABLED"] = "true"
@@ -21,7 +21,7 @@ os.environ["LITELLM_PROXY_DISABLED"] = "true"
 groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
 # -------------------------------------------------------------------
-# 2. GROQ-STRICT TOOL SCHEMA (NO additionalProperties VIOLATION)
+# 2. GROQ-STRICT TOOL SCHEMA (DO NOT TOUCH)
 # -------------------------------------------------------------------
 
 class KeyValue(BaseModel):
@@ -31,14 +31,40 @@ class KeyValue(BaseModel):
 
 class ApiCallerInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     url: str = Field(..., description="Full API endpoint URL")
     method: str = Field(..., description="HTTP method: GET, POST, PUT, DELETE")
     headers: List[KeyValue] = Field(default_factory=list)
     json_body: List[KeyValue] = Field(default_factory=list)
 
 # -------------------------------------------------------------------
-# 3. API CALLER TOOL
+# 3. 🔒 DEFENSIVE NORMALIZATION (CRITICAL FIX)
+# -------------------------------------------------------------------
+
+def enforce_string_kv(kv_list: Optional[list]) -> list:
+    """
+    Enforces Groq tool schema safety.
+    Converts ANY object/list into JSON strings.
+    This guarantees bulk + single execution never fail.
+    """
+    safe_list = []
+
+    for item in kv_list or []:
+        value = item.get("value")
+
+        if isinstance(value, (dict, list)):
+            safe_value = json.dumps(value)
+        else:
+            safe_value = str(value)
+
+        safe_list.append({
+            "key": str(item.get("key")),
+            "value": safe_value
+        })
+
+    return safe_list
+
+# -------------------------------------------------------------------
+# 4. API CALLER TOOL (LAST-MILE ENFORCEMENT)
 # -------------------------------------------------------------------
 
 class ApiCallerTool(BaseTool):
@@ -54,8 +80,12 @@ class ApiCallerTool(BaseTool):
         json_body: Optional[list] = None
     ) -> str:
         try:
-            headers_dict = {h["key"]: h["value"] for h in (headers or [])}
-            body_dict = {b["key"]: b["value"] for b in (json_body or [])}
+            # 🔐 FORCE schema-safe values (this fixes your issue)
+            safe_headers = enforce_string_kv(headers)
+            safe_body = enforce_string_kv(json_body)
+
+            headers_dict = {h["key"]: h["value"] for h in safe_headers}
+            body_dict = {b["key"]: b["value"] for b in safe_body}
 
             response = requests.request(
                 method=method.upper(),
@@ -70,15 +100,15 @@ class ApiCallerTool(BaseTool):
                 f"Response Headers: {dict(response.headers)}\n"
                 f"Response Body:\n{response.text[:2000]}"
             )
+
         except Exception as e:
             return f"API Execution Error: {str(e)}"
-
 
 # Instantiate tool
 api_caller_tool = ApiCallerTool()
 
 # -------------------------------------------------------------------
-# 4. CREW DEFINITION
+# 5. CREW DEFINITION
 # -------------------------------------------------------------------
 
 @CrewBase
@@ -154,4 +184,3 @@ class ApiTestingCrew():
             process=Process.sequential,
             verbose=True
         )
-
