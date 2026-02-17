@@ -6,6 +6,8 @@ litellm
 requests
 fastapi
 pydantic
+apscheduler
+
 
 
 
