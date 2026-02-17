@@ -14,16 +14,24 @@ os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
 # Define the schema strictly for Groq
+# --- UPDATED STRICT SCHEMA FOR GROQ ---
 class ApiCallerInput(BaseModel):
-    # This 'extra=forbid' is what generates 'additionalProperties: false'
+    # Root level additionalProperties: false
     model_config = ConfigDict(extra='forbid') 
     
     url: str = Field(..., description="The full URL of the API endpoint")
     method: str = Field(..., description="The HTTP method (GET, POST, PUT, DELETE)")
-    headers: dict = Field(default_factory=dict, description="HTTP headers as a dictionary")
-    json_body: dict = Field(default_factory=dict, description="The JSON request body as a dictionary")
+    
+    # Nested dictionaries must also have descriptions and structured carefully
+    headers: dict = Field(
+        default_factory=dict, 
+        description="HTTP headers as a key-value dictionary. Example: {'Content-Type': 'application/json'}"
+    )
+    json_body: dict = Field(
+        default_factory=dict, 
+        description="The JSON request body as a key-value dictionary."
+    )
 
-# Define the tool as a class
 class ApiCallerTool(BaseTool):
     name: str = "api_caller_tool"
     description: str = "Executes a real REST API call (GET, POST, PUT, DELETE)."
@@ -31,23 +39,28 @@ class ApiCallerTool(BaseTool):
 
     def _run(self, url: str, method: str, headers: dict = None, json_body: dict = None) -> dict:
         try:
-            actual_headers = headers if headers is not None else {}
-            actual_body = json_body if json_body is not None else {}
+            # Ensure we handle None values to avoid request errors
+            actual_headers = headers if isinstance(headers, dict) else {}
+            actual_body = json_body if isinstance(json_body, dict) else {}
             
             response = requests.request(
                 method=method.upper(),
                 url=url,
                 headers=actual_headers,
                 json=actual_body if method.upper() in ["POST", "PUT", "PATCH"] else None,
-                timeout=10
+                timeout=15 # Slightly longer timeout
             )
+            
+            # Truncate response body to avoid overloading LLM token limits
+            response_text = response.text[:2000] if response.text else "No content"
+            
             return {
                 "status_code": response.status_code,
-                "body": response.text,
+                "body": response_text,
                 "headers": dict(response.headers)
             }
         except Exception as e:
-            return f"Request failed: {str(e)}"
+            return {"error": f"Request failed: {str(e)}"}
 
 # Instantiate the tool
 api_caller_tool = ApiCallerTool()
@@ -127,6 +140,7 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
 
