@@ -6,7 +6,7 @@ from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Any
 
 # -------------------------------------------------------------------
 # 1. Environment & Safety Settings (IMPORTANT FOR STREAMLIT + GROQ)
@@ -21,13 +21,22 @@ os.environ["LITELLM_PROXY_DISABLED"] = "true"
 groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
 # -------------------------------------------------------------------
-# 2. GROQ-STRICT TOOL SCHEMA (DO NOT TOUCH)
+# 2. GROQ-COMPATIBLE TOOL SCHEMA (✅ FIXED FOR NESTED JSON)
 # -------------------------------------------------------------------
 
 class KeyValue(BaseModel):
+    """
+    IMPORTANT:
+    - value MUST allow Any
+    - Groq validates tool args BEFORE _run()
+    - Nested JSON bodies REQUIRE this
+    """
     model_config = ConfigDict(extra="forbid")
     key: str = Field(..., description="Header or JSON key")
-    value: str = Field(..., description="Header or JSON value")
+    value: Any = Field(
+        ...,
+        description="Header or JSON value (string, number, object, or list)"
+    )
 
 class ApiCallerInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -37,14 +46,14 @@ class ApiCallerInput(BaseModel):
     json_body: List[KeyValue] = Field(default_factory=list)
 
 # -------------------------------------------------------------------
-# 3. 🔒 DEFENSIVE NORMALIZATION (CRITICAL FIX)
+# 3. 🔒 DEFENSIVE NORMALIZATION (CRITICAL – DO NOT REMOVE)
 # -------------------------------------------------------------------
 
 def enforce_string_kv(kv_list: Optional[list]) -> list:
     """
-    Enforces Groq tool schema safety.
-    Converts ANY object/list into JSON strings.
-    This guarantees bulk + single execution never fail.
+    Last-mile schema enforcement.
+    Converts dict / list → JSON string.
+    Ensures requests lib always receives valid payloads.
     """
     safe_list = []
 
@@ -64,12 +73,15 @@ def enforce_string_kv(kv_list: Optional[list]) -> list:
     return safe_list
 
 # -------------------------------------------------------------------
-# 4. API CALLER TOOL (LAST-MILE ENFORCEMENT)
+# 4. API CALLER TOOL (SINGLE + BULK SAFE)
 # -------------------------------------------------------------------
 
 class ApiCallerTool(BaseTool):
     name: str = "api_caller_tool"
-    description: str = "Executes real REST API calls using provided URL, method, headers, and JSON body."
+    description: str = (
+        "Executes real REST API calls using provided URL, method, "
+        "headers, and JSON body."
+    )
     args_schema: type[BaseModel] = ApiCallerInput
 
     def _run(
@@ -80,7 +92,7 @@ class ApiCallerTool(BaseTool):
         json_body: Optional[list] = None
     ) -> str:
         try:
-            # 🔐 FORCE schema-safe values (this fixes your issue)
+            # 🔐 Normalize tool inputs
             safe_headers = enforce_string_kv(headers)
             safe_body = enforce_string_kv(json_body)
 
