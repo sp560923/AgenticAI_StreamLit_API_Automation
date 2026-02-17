@@ -15,11 +15,13 @@ groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
 # Define the schema strictly for Groq
 class ApiCallerInput(BaseModel):
+    # This 'extra=forbid' is what generates 'additionalProperties: false'
     model_config = ConfigDict(extra='forbid') 
+    
     url: str = Field(..., description="The full URL of the API endpoint")
     method: str = Field(..., description="The HTTP method (GET, POST, PUT, DELETE)")
-    headers: dict = Field(default_factory=dict, description="A dictionary of HTTP headers")
-    json_body: dict = Field(default_factory=dict, description="A dictionary for the JSON request body")
+    headers: dict = Field(default_factory=dict, description="HTTP headers as a dictionary")
+    json_body: dict = Field(default_factory=dict, description="The JSON request body as a dictionary")
 
 # Define the tool as a class
 class ApiCallerTool(BaseTool):
@@ -125,6 +127,7 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
 
