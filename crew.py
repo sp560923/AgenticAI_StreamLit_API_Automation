@@ -97,8 +97,9 @@ class ApiTestingCrew():
         return Agent(
             config=self.agents_config['api_executor'],
             tools=[api_caller_tool], # The agent uses our Python tool
-           # llm=self.gemini_llm,
+           # llm=self.gemini_llm,            
            llm=self.groq_llm,
+            allow_delegation=False,
             verbose=True
         )
 
@@ -140,6 +141,7 @@ class ApiTestingCrew():
             verbose=True
 
         )
+
 
 
 
